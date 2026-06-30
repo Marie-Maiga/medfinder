@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(if \\(-not $?\\) { \"Directory is empty or does not exist\" })"
+      "PowerShell(if \\(-not $?\\) { \"Directory is empty or does not exist\" })",
+      "PowerShell(node --version)",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(Select-String -Pattern \"proxy|middleware\" -CaseSensitive:$false)",
+      "PowerShell(Get-Command psql -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command npx -ErrorAction SilentlyContinue)",
+      "PowerShell(npx supabase --version 2>&1)"
     ]
   }
 }
