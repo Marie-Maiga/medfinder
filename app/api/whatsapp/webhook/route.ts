@@ -184,6 +184,7 @@ async function handleTextReply(parsed: any, serviceClient: any) {
     upper === 'YES'
   const isUnavailable =
     upper === 'INDISPONIBLE' ||
+    upper === 'INDISPO' ||
     upper === 'NON' ||
     upper === 'PAS DISPO' ||
     upper === '0' ||
