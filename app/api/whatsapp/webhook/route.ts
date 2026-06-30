@@ -96,6 +96,9 @@ async function handlePharmacyReply(parsed: any, serviceClient: any) {
     raw_payload: parsed,
   })
 
+  // Recalculer le score de la pharmacie
+  void serviceClient.rpc('recalculate_pharmacy_scores', { p_pharmacy_id: rph.pharmacy_id })
+
   const requestId = rph.request_id
   const request = rph.request
 
