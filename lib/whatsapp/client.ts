@@ -34,33 +34,14 @@ export async function sendPharmacyRequest(
 ): Promise<WaSendResult> {
   const medicineList = medicines.map((m, i) => `${i + 1}. ${m}`).join('\n')
 
+  // TEST MODE: send as plain text to confirm delivery works
+  // Switch back to interactive once delivery is confirmed
   return post('/messages', {
     messaging_product: 'whatsapp',
     to,
-    type: 'interactive',
-    interactive: {
-      type: 'button',
-      body: {
-        text: `*MedFinder — Demande de médicaments*\n\nBonjour *${pharmacyName}*,\n\nUn patient du quartier *${neighborhood}* recherche :\n\n${medicineList}\n\nPouvez-vous confirmer la disponibilité ?`,
-      },
-      action: {
-        buttons: [
-          {
-            type: 'reply',
-            reply: {
-              id: `AVAILABLE_${requestPharmacyId}`,
-              title: '✅ Disponible',
-            },
-          },
-          {
-            type: 'reply',
-            reply: {
-              id: `UNAVAILABLE_${requestPharmacyId}`,
-              title: '❌ Indisponible',
-            },
-          },
-        ],
-      },
+    type: 'text',
+    text: {
+      body: `*MedFinder — Demande de médicaments*\n\nBonjour *${pharmacyName}*,\n\nUn patient du quartier *${neighborhood}* recherche :\n\n${medicineList}\n\nRépondez DISPO ou INDISPO.\n\n(ID: ${requestPharmacyId})`,
     },
   })
 }
