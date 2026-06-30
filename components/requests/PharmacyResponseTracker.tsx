@@ -30,7 +30,8 @@ export function PharmacyResponseTracker({ requestId, initialPharmacies, timeoutA
           table: 'request_pharmacies',
           filter: `request_id=eq.${requestId}`,
         },
-        (payload) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (payload: any) => {
           setPharmacies((prev) =>
             prev.map((p) =>
               p.id === payload.new.id ? { ...p, ...payload.new } : p

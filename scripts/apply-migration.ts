@@ -44,7 +44,8 @@ DO $$ BEGIN
 END $$;
 `
 
-const { error } = await supabase.rpc('exec_sql', { sql }).catch(() => ({ error: 'rpc not available' })) as any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const { error } = await (supabase.rpc('exec_sql', { sql }) as any).catch(() => ({ error: 'rpc not available' }))
 
 if (error) {
   // rpc not available — try direct query via REST
