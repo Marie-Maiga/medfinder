@@ -44,6 +44,8 @@ export async function POST(request: NextRequest) {
     await handlePharmacyReply(parsed, serviceClient)
   } else if (parsed.type === 'feedback') {
     await handlePatientFeedback(parsed, serviceClient)
+  } else if (parsed.type === 'text') {
+    await handleTextReply(parsed, serviceClient)
   }
 
   return new Response('OK', { status: 200 })
@@ -166,6 +168,62 @@ async function sendResults(requestId: string, request: any, allRph: any[], servi
   } catch (err) {
     console.error('Failed to send patient results:', err)
   }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleTextReply(parsed: any, serviceClient: any) {
+  const { text, fromPhone, waMessageId, timestamp } = parsed
+  const upper = text.toUpperCase().trim()
+
+  // Check if it looks like a pharmacy availability reply
+  const isAvailable =
+    upper === 'DISPO' ||
+    upper === 'DISPONIBLE' ||
+    upper === 'OUI' ||
+    upper === '1' ||
+    upper === 'YES'
+  const isUnavailable =
+    upper === 'INDISPONIBLE' ||
+    upper === 'NON' ||
+    upper === 'PAS DISPO' ||
+    upper === '0' ||
+    upper === 'NO'
+
+  if (!isAvailable && !isUnavailable) return
+
+  // Find pharmacy by phone number
+  const { data: pharmacy } = await serviceClient
+    .from('pharmacies')
+    .select('id')
+    .eq('whatsapp_phone', fromPhone)
+    .maybeSingle()
+
+  if (!pharmacy) return
+
+  // Find most recent pending request_pharmacy for this pharmacy
+  const { data: rph } = await serviceClient
+    .from('request_pharmacies')
+    .select(`*, request:requests(*), pharmacy:pharmacies(name, address, whatsapp_phone)`)
+    .eq('pharmacy_id', pharmacy.id)
+    .eq('response_status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!rph) return
+
+  // Reuse handlePharmacyReply logic
+  await handlePharmacyReply(
+    {
+      type: 'button_reply',
+      requestPharmacyId: rph.id,
+      isAvailable,
+      fromPhone,
+      waMessageId,
+      timestamp,
+    },
+    serviceClient
+  )
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
