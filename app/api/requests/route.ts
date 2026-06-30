@@ -7,7 +7,6 @@ import { normalizePhone } from '@/lib/utils/phone'
 import { NIAMEY_CENTER } from '@/lib/geo/neighborhoods'
 
 const TIMEOUT_MINUTES = parseInt(process.env.REQUEST_TIMEOUT_MINUTES ?? '15', 10)
-const MAX_PHARMACIES = parseInt(process.env.MAX_PHARMACIES_PER_REQUEST ?? '5', 10)
 
 const CreateRequestSchema = z.object({
   patient_name: z.string().optional(),
@@ -147,6 +146,14 @@ async function dispatchPharmacies(
   serviceClient: any
 ) {
   try {
+    // Lire les settings depuis la DB
+    const { data: settings } = await serviceClient
+      .from('app_settings')
+      .select('response_timeout_sec, max_pharmacies_per_request')
+      .eq('id', 1)
+      .single()
+    const maxPharmacies = settings?.max_pharmacies_per_request ?? 5
+
     // Récupérer pharmacies actives
     const { data: pharmacies } = await serviceClient
       .from('pharmacies')
@@ -171,7 +178,7 @@ async function dispatchPharmacies(
     const neighborhoodName = req?.patient_neighborhood?.name ?? 'Niamey'
 
     // Scorer et sélectionner
-    const selected = scorePharmacies(pharmacies, lat, lng, MAX_PHARMACIES)
+    const selected = scorePharmacies(pharmacies, lat, lng, maxPharmacies)
 
     // Insérer les request_pharmacies
     const { data: rphList } = await serviceClient
