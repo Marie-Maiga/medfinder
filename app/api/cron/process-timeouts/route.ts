@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { sendResults } from '@/lib/whatsapp/results'
+import { processTimedOutRequests } from '@/lib/whatsapp/process-timeouts'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,25 +11,7 @@ export async function GET(request: NextRequest) {
   }
 
   const serviceClient = createServiceClient()
-
-  const { data: timedOutRequests } = await serviceClient
-    .from('requests')
-    .select('*')
-    .in('status', ['pending', 'sent'])
-    .lt('timeout_at', new Date().toISOString())
-    .is('result_sent_at', null)
-
-  let processed = 0
-
-  for (const req of timedOutRequests ?? []) {
-    const { data: allRph } = await serviceClient
-      .from('request_pharmacies')
-      .select('response_status, distance_meters, pharmacy:pharmacies(name, address, whatsapp_phone)')
-      .eq('request_id', req.id)
-
-    await sendResults(req.id, req, allRph ?? [], serviceClient)
-    processed++
-  }
+  const processed = await processTimedOutRequests(serviceClient)
 
   return NextResponse.json({ processed })
 }

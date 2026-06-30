@@ -5,6 +5,7 @@ import { scorePharmacies } from '@/lib/scoring/pharmacy-scorer'
 import { sendPharmacyRequest } from '@/lib/whatsapp/client'
 import { normalizePhone } from '@/lib/utils/phone'
 import { NIAMEY_CENTER } from '@/lib/geo/neighborhoods'
+import { processTimedOutRequests } from '@/lib/whatsapp/process-timeouts'
 
 const TIMEOUT_MINUTES = parseInt(process.env.REQUEST_TIMEOUT_MINUTES ?? '15', 10)
 
@@ -22,6 +23,9 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Finaliser les demandes expirées sans réponse (déclenché à chaque chargement)
+  void processTimedOutRequests(createServiceClient())
 
   const { data: profile } = await supabase
     .from('user_profiles')
