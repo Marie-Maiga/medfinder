@@ -88,9 +88,13 @@ export function PharmacyResponseTracker({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestId])
 
-  // Countdown timer
+  // Countdown timer — s'arrête si résultats déjà envoyés ou tout le monde a répondu
+  const allResponded = pharmacies.length > 0 && pharmacies.every((p) => p.response_status !== 'pending')
   useEffect(() => {
-    if (!timeoutAt) return
+    if (!timeoutAt || resultSentAt || allResponded) {
+      setTimeLeft(null)
+      return
+    }
 
     const interval = setInterval(() => {
       const remaining = new Date(timeoutAt).getTime() - Date.now()
@@ -98,7 +102,7 @@ export function PharmacyResponseTracker({
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [timeoutAt])
+  }, [timeoutAt, resultSentAt, allResponded])
 
   const responded = pharmacies.filter((p) => p.response_status !== 'pending').length
   const available = pharmacies.filter((p) => p.response_status === 'available').length
