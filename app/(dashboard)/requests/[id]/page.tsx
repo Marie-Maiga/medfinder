@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PharmacyResponseTracker } from '@/components/requests/PharmacyResponseTracker'
-import { RequestStatusBadge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { ArrowLeft, User, Phone, MapPin, Pill } from 'lucide-react'
 import Link from 'next/link'
@@ -49,7 +48,6 @@ export default async function RequestDetailPage({
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-gray-900">Demande</h1>
-            <RequestStatusBadge status={req.status} />
           </div>
           <p className="text-sm text-gray-400">
             {format(new Date(req.created_at), "d MMM yyyy 'à' HH:mm", { locale: fr })}
@@ -113,21 +111,12 @@ export default async function RequestDetailPage({
             requestId={req.id}
             initialPharmacies={req.request_pharmacies ?? []}
             timeoutAt={req.timeout_at}
+            initialStatus={req.status}
+            initialResultSentAt={req.result_sent_at ?? null}
           />
         </CardContent>
       </Card>
 
-      {/* Résultats */}
-      {req.result_sent_at && (
-        <Card>
-          <CardContent className="py-3">
-            <p className="text-sm text-green-700">
-              ✅ Résultats envoyés au patient le{' '}
-              {format(new Date(req.result_sent_at), "d MMM 'à' HH:mm", { locale: fr })}
-            </p>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Feedback */}
       {req.patient_feedback && (

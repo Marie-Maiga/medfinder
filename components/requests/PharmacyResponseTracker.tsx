@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ResponseStatusBadge } from '@/components/ui/badge'
+import { ResponseStatusBadge, RequestStatusBadge } from '@/components/ui/badge'
 import { formatDistance } from '@/lib/geo/distance'
 import { Clock, Building2, RefreshCw } from 'lucide-react'
 import type { RequestPharmacy } from '@/types'
@@ -11,38 +11,82 @@ interface Props {
   requestId: string
   initialPharmacies: RequestPharmacy[]
   timeoutAt: string | null
+  initialStatus: string
+  initialResultSentAt: string | null
 }
 
-export function PharmacyResponseTracker({ requestId, initialPharmacies, timeoutAt }: Props) {
+export function PharmacyResponseTracker({
+  requestId,
+  initialPharmacies,
+  timeoutAt,
+  initialStatus,
+  initialResultSentAt,
+}: Props) {
   const [pharmacies, setPharmacies] = useState(initialPharmacies)
+  const [status, setStatus] = useState(initialStatus)
+  const [resultSentAt, setResultSentAt] = useState(initialResultSentAt)
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   const supabase = createClient()
 
-  // Real-time subscription on request_pharmacies
+  // Refetch pharmacy list with joined data
+  async function refetchPharmacies() {
+    const { data } = await supabase
+      .from('request_pharmacies')
+      .select('*, pharmacy:pharmacies(id, name, whatsapp_phone, address, lat, lng)')
+      .eq('request_id', requestId)
+      .order('rank')
+    if (data) setPharmacies(data as RequestPharmacy[])
+  }
+
+  // Real-time: request_pharmacies (INSERT + UPDATE)
   useEffect(() => {
     const channel = supabase
-      .channel(`request-${requestId}`)
+      .channel(`rph-${requestId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'request_pharmacies',
+          filter: `request_id=eq.${requestId}`,
+        },
+        () => { void refetchPharmacies() }
+      )
+      .subscribe()
+
+    // Initial fetch in case page loaded before dispatch finished
+    void refetchPharmacies()
+
+    return () => { supabase.removeChannel(channel) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestId])
+
+  // Real-time: requests table (status + result_sent_at)
+  useEffect(() => {
+    const channel = supabase
+      .channel(`req-${requestId}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'request_pharmacies',
-          filter: `request_id=eq.${requestId}`,
+          table: 'requests',
+          filter: `id=eq.${requestId}`,
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (payload: any) => {
-          setPharmacies((prev) =>
-            prev.map((p) =>
-              p.id === payload.new.id ? { ...p, ...payload.new } : p
-            )
-          )
+          if (payload.new.status) setStatus(payload.new.status)
+          if (payload.new.result_sent_at) setResultSentAt(payload.new.result_sent_at)
+          if (payload.new.timeout_at) {
+            // timeout_at may have been updated
+          }
         }
       )
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [requestId, supabase])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestId])
 
   // Countdown timer
   useEffect(() => {
@@ -68,6 +112,16 @@ export function PharmacyResponseTracker({ requestId, initialPharmacies, timeoutA
 
   return (
     <div className="space-y-4">
+      {/* Status badge temps réel */}
+      <div className="flex items-center gap-2">
+        <RequestStatusBadge status={status} />
+        {resultSentAt && (
+          <span className="text-xs text-green-600">
+            ✅ Résultats envoyés au patient
+          </span>
+        )}
+      </div>
+
       {/* Summary bar */}
       <div className="flex items-center gap-6 p-4 bg-gray-50 rounded-xl">
         <div className="flex items-center gap-2 text-sm">
@@ -97,6 +151,12 @@ export function PharmacyResponseTracker({ requestId, initialPharmacies, timeoutA
 
       {/* Pharmacy list */}
       <div className="space-y-2">
+        {pharmacies.length === 0 && (
+          <div className="flex items-center gap-2 p-4 text-sm text-gray-400">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Sélection des pharmacies en cours…
+          </div>
+        )}
         {pharmacies
           .sort((a, b) => a.rank - b.rank)
           .map((rph) => (
@@ -110,6 +170,7 @@ export function PharmacyResponseTracker({ requestId, initialPharmacies, timeoutA
 
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-gray-900 text-sm truncate">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {(rph.pharmacy as any)?.name ?? '—'}
                 </p>
                 <p className="text-xs text-gray-400">
