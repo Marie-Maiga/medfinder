@@ -153,6 +153,13 @@ async function dispatchPharmacies(
       .eq('id', 1)
       .single()
     const maxPharmacies = settings?.max_pharmacies_per_request ?? 5
+    const timeoutSec = settings?.response_timeout_sec ?? 900
+
+    // Mettre à jour timeout_at avec la valeur des settings DB
+    await serviceClient
+      .from('requests')
+      .update({ timeout_at: new Date(Date.now() + timeoutSec * 1000).toISOString() })
+      .eq('id', requestId)
 
     // Récupérer pharmacies actives
     const { data: pharmacies } = await serviceClient
