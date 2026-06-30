@@ -39,7 +39,7 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  if (pathname.startsWith('/api/webhooks/')) {
+  if (pathname.startsWith('/api/webhooks/') || pathname.startsWith('/api/whatsapp/')) {
     return supabaseResponse
   }
 
