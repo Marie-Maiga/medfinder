@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Plus, X, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { MedicineAutocomplete } from './MedicineAutocomplete'
 import type { Neighborhood } from '@/types'
 
 export function RequestForm() {
@@ -162,12 +163,10 @@ export function RequestForm() {
         <CardContent className="space-y-3">
           {medicines.map((med, i) => (
             <div key={i} className="flex gap-2">
-              <input
-                type="text"
+              <MedicineAutocomplete
                 value={med}
-                onChange={(e) => updateMedicine(i, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder={`Ex : Augmentin 1g, Doliprane 500mg...`}
+                onChange={(v) => updateMedicine(i, v)}
+                placeholder="Ex : Paracétamol, Augmentin 1g..."
               />
               {medicines.length > 1 && (
                 <button
