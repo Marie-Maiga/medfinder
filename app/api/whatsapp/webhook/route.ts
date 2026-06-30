@@ -192,11 +192,14 @@ async function handleTextReply(parsed: any, serviceClient: any) {
 
   if (!isAvailable && !isUnavailable) return
 
+  // Normalize phone: Meta sends without +, DB stores with +
+  const normalizedPhone = fromPhone.startsWith('+') ? fromPhone : `+${fromPhone}`
+
   // Find pharmacy by phone number
   const { data: pharmacy } = await serviceClient
     .from('pharmacies')
     .select('id')
-    .eq('whatsapp_phone', fromPhone)
+    .or(`whatsapp_phone.eq.${normalizedPhone},whatsapp_phone.eq.${fromPhone}`)
     .maybeSingle()
 
   if (!pharmacy) return
