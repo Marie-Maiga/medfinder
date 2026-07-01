@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface Medicine {
   id: string
@@ -21,7 +21,7 @@ export function MedicineAutocomplete({ value, onChange, placeholder }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const search = useCallback((q: string) => {
+  function doSearch(q: string) {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (q.length < 2) { setSuggestions([]); setOpen(false); return }
 
@@ -29,16 +29,20 @@ export function MedicineAutocomplete({ value, onChange, placeholder }: Props) {
       try {
         const res = await fetch(`/api/medicines/search?q=${encodeURIComponent(q)}`)
         const json = await res.json()
-        setSuggestions(json.data ?? [])
-        setOpen((json.data ?? []).length > 0)
+        const results = json.data ?? []
+        setSuggestions(results)
+        setOpen(results.length > 0)
         setActiveIndex(-1)
       } catch {
         setSuggestions([])
       }
     }, 250)
-  }, [])
+  }
 
-  useEffect(() => { search(value) }, [value, search])
+  // Sync externe (si valeur réinitialisée depuis le parent)
+  useEffect(() => {
+    if (value.length < 2) { setSuggestions([]); setOpen(false) }
+  }, [value])
 
   // Fermer si clic extérieur
   useEffect(() => {
@@ -84,7 +88,7 @@ export function MedicineAutocomplete({ value, onChange, placeholder }: Props) {
       <input
         type="text"
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={e => { onChange(e.target.value); doSearch(e.target.value) }}
         onKeyDown={onKeyDown}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
