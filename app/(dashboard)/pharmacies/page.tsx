@@ -33,10 +33,10 @@ export default async function PharmaciesPage() {
           <p className="text-gray-500 font-medium">Aucune pharmacie enregistrée</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-auto">
+          <table className="w-full text-sm min-w-[700px]">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
+              <tr className="border-b border-gray-100 bg-gray-50 sticky top-0 z-10">
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pharmacie</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quartier</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">WhatsApp</th>
