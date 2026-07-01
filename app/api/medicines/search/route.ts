@@ -11,24 +11,17 @@ export async function GET(req: Request) {
 
   const supabase = await createClient()
 
-  // Recherche sur le nom et les synonymes
+  // Recherche sur le nom uniquement (simple et fiable)
   const { data, error } = await supabase
     .from('medicines')
     .select('id, name, synonyms')
-    .or(`name.ilike.%${q}%,synonyms.cs.{${q}}`)
+    .ilike('name', `%${q}%`)
     .order('name')
     .limit(8)
 
   if (error) {
-    // Fallback : recherche nom uniquement si le filtre synonymes échoue
-    const { data: fallback } = await supabase
-      .from('medicines')
-      .select('id, name, synonyms')
-      .ilike('name', `%${q}%`)
-      .order('name')
-      .limit(8)
-
-    return NextResponse.json({ data: fallback ?? [] })
+    console.error('[medicines/search] error:', error)
+    return NextResponse.json({ data: [] })
   }
 
   return NextResponse.json({ data: data ?? [] })

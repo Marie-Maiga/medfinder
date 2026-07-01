@@ -28,12 +28,15 @@ export function MedicineAutocomplete({ value, onChange, placeholder }: Props) {
     debounceRef.current = setTimeout(async () => {
       try {
         const res = await fetch(`/api/medicines/search?q=${encodeURIComponent(q)}`)
+        if (!res.ok) { console.error('medicines search HTTP', res.status); setSuggestions([]); return }
         const json = await res.json()
         const results = json.data ?? []
+        console.log('[autocomplete]', q, '->', results.length, 'résultats')
         setSuggestions(results)
         setOpen(results.length > 0)
         setActiveIndex(-1)
-      } catch {
+      } catch (err) {
+        console.error('[autocomplete] fetch error:', err)
         setSuggestions([])
       }
     }, 250)

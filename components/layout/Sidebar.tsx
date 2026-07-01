@@ -47,7 +47,7 @@ export function Sidebar({ role, userName }: SidebarProps) {
   }
 
   return (
-    <aside className="w-64 h-screen sticky top-0 bg-gray-900 flex flex-col shrink-0">
+    <aside className="w-64 h-screen sticky top-0 bg-gray-900 flex flex-col shrink-0 overflow-y-auto">
       {/* Logo */}
       <div className="px-6 py-5 border-b border-gray-800">
         <div className="flex items-center gap-2">
